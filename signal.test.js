@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { getSignalFromMetrics, computeRsi, buildSignalPayload } = require('./server');
+const { getSignalFromMetrics, computeRsi, buildSignalPayload, backtestCandles } = require('./server');
 
 test('buy signal is generated on bullish conditions', () => {
   const signal = getSignalFromMetrics({
@@ -41,4 +41,18 @@ test('gold payload uses Binance PAXGUSDT and never invents an unavailable quote'
   assert.equal(payload.symbol, 'PAXGUSDT');
   assert.ok(payload.price === null || Number.isFinite(payload.price));
   assert.ok(payload.signal === 'UNAVAILABLE' || ['BUY', 'SELL', 'WATCH'].includes(payload.signal));
+});
+
+test('backtest returns measured metrics with explicit assumptions', () => {
+  const candles = Array.from({ length: 120 }, (_, index) => ({
+    close: 4000 + index,
+    high: 4001 + index,
+    low: 3999 + index,
+    volume: 100
+  }));
+  const result = backtestCandles(candles);
+  assert.equal(result.timeframe, '15m');
+  assert.equal(result.sampleSize, 120);
+  assert.ok(Number.isFinite(result.netReturn));
+  assert.match(result.assumptions, /1% risk/);
 });

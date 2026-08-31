@@ -66,7 +66,7 @@
 
             <div class="stats-grid">
               <div class="mini-stat">
-                <span>Model Score</span>
+                <span>Backtest Win Rate</span>
                 <strong id="successRateValue">--</strong>
               </div>
               <div class="mini-stat">
@@ -169,6 +169,20 @@
               <span>Target reference</span>
               <strong id="targetValue">--</strong>
             </div>
+            <div class="divider"></div>
+            <div class="section-heading small-gap">
+              <p class="eyebrow">Automatic backtest</p>
+              <h3>15m strategy history</h3>
+            </div>
+            <div class="metric-row">
+              <span>Closed trades</span>
+              <strong id="backtestTrades">--</strong>
+            </div>
+            <div class="metric-row">
+              <span>Net return</span>
+              <strong id="backtestReturn">--</strong>
+            </div>
+            <p class="data-status" id="backtestAssumptions">Waiting for backtest data...</p>
           </div>
 
           <div class="panel">

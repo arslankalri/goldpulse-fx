@@ -49,6 +49,9 @@ function renderSignal(data) {
   document.getElementById('entryValue').textContent = formatMoney(data.entry);
   document.getElementById('stopValue').textContent = formatMoney(data.stop);
   document.getElementById('targetValue').textContent = formatMoney(data.target);
+  document.getElementById('backtestTrades').textContent = data.backtest?.trades ?? '--';
+  document.getElementById('backtestReturn').textContent = Number.isFinite(data.backtest?.netReturn) ? `${data.backtest.netReturn > 0 ? '+' : ''}${data.backtest.netReturn.toFixed(2)}%` : '--';
+  document.getElementById('backtestAssumptions').textContent = data.backtest?.assumptions || 'Backtest unavailable until 15-minute futures history is available.';
   document.getElementById('traderExperience').textContent = data.marketSummary?.traderExperience || 'Experienced traders are waiting for clean pullbacks and disciplined stops before committing to new gold positions.';
 
   const list = document.getElementById('newsList');
@@ -71,7 +74,7 @@ function renderSignal(data) {
 
   document.getElementById('summaryText').textContent = data.signal === 'UNAVAILABLE'
     ? 'Binance data unavailable. No trade signal is active.'
-    : `${data.symbol} futures signal is ${data.signal} with a ${data.successRate}% model score. ${data.dataSource || ''}`;
+    : `${data.symbol} futures signal is ${data.signal}${Number.isFinite(data.successRate) ? ` with a ${data.successRate}% backtest win rate` : ''}. ${data.dataSource || ''}`;
 }
 
 async function refreshSignal() {

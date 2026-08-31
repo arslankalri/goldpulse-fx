@@ -58,6 +58,69 @@ function getSignalFromMetrics({ price, ma20, ma50, rsi, sentiment, volumeScore }
   return { label: 'WATCH', confidence: 68 };
 }
 
+function getTechnicalSignal({ price, ma20, ma50, rsi, volumeScore }) {
+  const trendBullish = price > ma20 && ma20 > ma50;
+  const trendBearish = price < ma20 && ma20 < ma50;
+  if (trendBullish && rsi > 52 && volumeScore > 0.55) return 'BUY';
+  if (trendBearish && rsi < 48 && volumeScore < 0.45) return 'SELL';
+  return 'WATCH';
+}
+
+function backtestCandles(candles, { riskPercent = 1, leverage = 10 } = {}) {
+  const feeRate = 0.0004;
+  const slippageRate = 0.0002;
+  const horizon = 4;
+  const targetRate = 0.012;
+  const stopRate = 0.008;
+  const trades = [];
+
+  for (let index = 60; index < candles.length - horizon; index += 1) {
+    const history = candles.slice(0, index + 1);
+    const closes = history.map((candle) => candle.close);
+    const volumes = history.map((candle) => candle.volume);
+    const averageVolume = average(volumes.slice(-50));
+    const volumeScore = averageVolume ? Math.max(0, Math.min(1, volumes.at(-1) / averageVolume / 2)) : 0.5;
+    const signal = getTechnicalSignal({
+      price: closes.at(-1),
+      ma20: computeEma(closes.slice(-20), 20),
+      ma50: average(closes.slice(-50)),
+      rsi: computeRsi(closes, 14),
+      volumeScore
+    });
+    if (signal === 'WATCH') continue;
+
+    const entry = closes.at(-1) * (signal === 'BUY' ? 1 + slippageRate : 1 - slippageRate);
+    const target = entry * (signal === 'BUY' ? 1 + targetRate : 1 - targetRate);
+    const stop = entry * (signal === 'BUY' ? 1 - stopRate : 1 + stopRate);
+    let exit = candles[index + horizon].close;
+    let outcome = signal === 'BUY' ? exit >= entry : exit <= entry;
+
+    for (const futureCandle of candles.slice(index + 1, index + horizon + 1)) {
+      if (signal === 'BUY' && futureCandle.low <= stop) { exit = stop; outcome = false; break; }
+      if (signal === 'SELL' && futureCandle.high >= stop) { exit = stop; outcome = false; break; }
+      if (signal === 'BUY' && futureCandle.high >= target) { exit = target; outcome = true; break; }
+      if (signal === 'SELL' && futureCandle.low <= target) { exit = target; outcome = true; break; }
+    }
+
+    const grossReturn = signal === 'BUY' ? (exit - entry) / entry : (entry - exit) / entry;
+    const netReturn = grossReturn - feeRate * 2;
+    trades.push({ signal, outcome: netReturn > 0 && outcome, netReturn, riskPercent, leverage });
+  }
+
+  const wins = trades.filter((trade) => trade.outcome).length;
+  const netReturn = trades.reduce((total, trade) => total + trade.netReturn, 0);
+  return {
+    timeframe: '15m',
+    sampleSize: candles.length,
+    trades: trades.length,
+    wins,
+    losses: trades.length - wins,
+    successRate: trades.length ? Math.round((wins / trades.length) * 100) : null,
+    netReturn: Number((netReturn * 100).toFixed(2)),
+    assumptions: `${riskPercent}% risk, ${leverage}x max leverage, ${horizon} candles, fees and slippage included`
+  };
+}
+
 function withTimeout(promiseFactory, timeoutMs = 4000) {
   return new Promise((resolve, reject) => {
     const controller = new AbortController();
@@ -186,6 +249,40 @@ async function fetchGoldDataCached() {
   return payload;
 }
 
+async function fetchBacktestData() {
+  return withTimeout(async (signal) => {
+    const response = await fetch('https://fapi.binance.com/fapi/v1/klines?symbol=PAXGUSDT&interval=15m&limit=1000', {
+      signal,
+      headers: { 'Accept': 'application/json' }
+    });
+    if (!response.ok) throw new Error(`Backtest candle fetch failed: ${response.status}`);
+    const rows = await response.json();
+    const candles = rows.map((row) => ({
+      close: Number(row[4]),
+      high: Number(row[2]),
+      low: Number(row[3]),
+      volume: Number(row[5])
+    }));
+    if (candles.length < 100 || candles.some((candle) => !Number.isFinite(candle.close))) {
+      throw new Error('Not enough valid 15-minute futures candles for backtest');
+    }
+    return candles;
+  }, 8000);
+}
+
+let backtestCache = { result: null, expiresAt: 0 };
+
+async function getBacktestResult() {
+  if (backtestCache.result && backtestCache.expiresAt > Date.now()) return backtestCache.result;
+  try {
+    const candles = await fetchBacktestData();
+    backtestCache = { result: backtestCandles(candles, { riskPercent: 1, leverage: 10 }), expiresAt: Date.now() + 300000 };
+    return backtestCache.result;
+  } catch (error) {
+    return null;
+  }
+}
+
 async function fetchNewsSentiment() {
   return withTimeout(async (signal) => {
     const url = 'https://feeds.finance.yahoo.com/rss/2.0/headline?s=XAUUSD%3DX&region=US&lang=en-US';
@@ -235,6 +332,7 @@ async function buildSignalPayload() {
   try {
     const market = await fetchGoldDataCached();
     const news = await fetchNewsSentiment().catch(() => ({ sentiment: 0, headlines: [] }));
+    const backtest = await getBacktestResult();
 
     const volumeScore = market.volumeScore;
     const signal = getSignalFromMetrics({
@@ -249,7 +347,7 @@ async function buildSignalPayload() {
     const hasFuturesHistory = market.marketType === 'Futures';
     const confidence = hasFuturesHistory ? signal.confidence : 0;
     const direction = hasFuturesHistory ? signal.label : 'WATCH';
-    const successRate = direction === 'BUY' ? 82 : direction === 'SELL' ? 79 : 68;
+    const successRate = backtest?.trades >= 20 ? backtest.successRate : null;
     const entry = hasFuturesHistory ? (direction === 'BUY' ? market.price * 0.995 : market.price * 1.005) : null;
     const stop = hasFuturesHistory ? (direction === 'BUY' ? market.price * 0.985 : market.price * 1.015) : null;
     const target = hasFuturesHistory ? (direction === 'BUY' ? market.price * 1.015 : market.price * 0.985) : null;
@@ -301,6 +399,7 @@ async function buildSignalPayload() {
       }
       , dataSource: `Binance public API (${market.marketType})`, marketType: market.marketType, updatedAt: Date.now(),
       dataQuality: hasFuturesHistory ? 'Live futures candles' : 'Live spot proxy; futures signal disabled'
+      , backtest
     };
   } catch (error) {
     return buildFallbackSignalPayload();
@@ -364,4 +463,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { buildSignalPayload, getSignalFromMetrics, computeRsi, computeEma, fetchGoldData };
+module.exports = { buildSignalPayload, getSignalFromMetrics, computeRsi, computeEma, backtestCandles, fetchGoldData };
