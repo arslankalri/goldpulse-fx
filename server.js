@@ -114,7 +114,24 @@ async function fetchGoldData() {
         break;
       }
     }
-    if (!responses) throw new Error('Binance has no accessible PAXGUSDT market feed');
+    if (!responses) {
+      const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=pax-gold&vs_currencies=usd&include_24hr_change=true', { signal, headers });
+      if (!response.ok) throw new Error('No accessible PAXGUSDT or PAXG spot feed');
+      const quote = await response.json();
+      const price = Number(quote?.['pax-gold']?.usd);
+      if (!Number.isFinite(price)) throw new Error('CoinGecko returned no usable PAXG price');
+      return {
+        symbol,
+        price,
+        ma20: price,
+        ma50: price,
+        rsi: 50,
+        closes: [price],
+        volumeScore: 0.5,
+        change: Number(quote?.['pax-gold']?.usd_24h_change || 0),
+        marketType: 'PAXG spot proxy'
+      };
+    }
 
     const candles = await responses[0].json();
     const ticker = await responses[1].json();
