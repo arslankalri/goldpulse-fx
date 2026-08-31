@@ -51,7 +51,7 @@ test('backtest returns measured metrics with explicit assumptions', () => {
     volume: 100
   }));
   const result = backtestCandles(candles);
-  assert.equal(result.timeframe, '15m');
+  assert.equal(result.timeframe, '1h');
   assert.equal(result.sampleSize, 120);
   assert.ok(Number.isFinite(result.netReturn));
   assert.match(result.assumptions, /1% risk/);

@@ -73,8 +73,8 @@ function renderSignal(data) {
   }
 
   document.getElementById('summaryText').textContent = data.signal === 'UNAVAILABLE'
-    ? 'Binance data unavailable. No trade signal is active.'
-    : `${data.symbol} futures signal is ${data.signal}${Number.isFinite(data.successRate) ? ` with a ${data.successRate}% backtest win rate` : ''}. ${data.dataSource || ''}`;
+    ? 'Crypto market data unavailable. No trade signal is active.'
+    : `${data.symbol} market signal is ${data.signal}${Number.isFinite(data.successRate) ? ` with a ${data.successRate}% backtest win rate` : ''}. ${data.dataSource || ''}`;
 }
 
 async function refreshSignal() {
@@ -82,7 +82,7 @@ async function refreshSignal() {
     const data = await fetchSignal();
     renderSignal(data);
   } catch (error) {
-    document.getElementById('summaryText').textContent = 'Binance market data is temporarily unavailable. No trade signal is active.';
+    document.getElementById('summaryText').textContent = 'Crypto market data is temporarily unavailable. No trade signal is active.';
     document.getElementById('dataStatus').textContent = 'Feed error | No trade signal';
   }
 }
