@@ -24,6 +24,7 @@ function renderSignal(data) {
   document.getElementById('priceValue').textContent = formatMoney(data.price);
   document.getElementById('priceChange').textContent = Number.isFinite(data.change) ? `${data.change > 0 ? '+' : ''}${Number(data.change).toFixed(2)}%` : '--';
   document.getElementById('priceChange').className = `price-change ${data.change >= 0 ? 'positive' : 'neutral'}`;
+  document.getElementById('dataStatus').textContent = `${data.dataQuality || 'Market data'}${data.updatedAt ? ` | Updated ${new Date(data.updatedAt).toLocaleTimeString()}` : ''}`;
 
   document.getElementById('successRateValue').textContent = Number.isFinite(data.successRate) ? `${data.successRate}%` : '--';
   document.getElementById('confidenceValue').textContent = Number.isFinite(data.confidence) ? `${data.confidence}%` : '--';
@@ -79,6 +80,7 @@ async function refreshSignal() {
     renderSignal(data);
   } catch (error) {
     document.getElementById('summaryText').textContent = 'Binance market data is temporarily unavailable. No trade signal is active.';
+    document.getElementById('dataStatus').textContent = 'Feed error | No trade signal';
   }
 }
 

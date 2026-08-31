@@ -286,6 +286,12 @@ h3 {
   padding: 0.55rem 0.8rem;
 }
 
+.data-status {
+  margin: 0.8rem 0 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
 .positive {
   color: var(--green);
   background: rgba(61, 213, 152, 0.12);

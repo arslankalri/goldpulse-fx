@@ -10,6 +10,16 @@ function average(values) {
   return values.reduce((sum, value) => sum + value, 0) / values.length;
 }
 
+function computeEma(prices, period) {
+  if (!prices.length) return 0;
+  const multiplier = 2 / (period + 1);
+  let ema = prices[0];
+  prices.slice(1).forEach((price) => {
+    ema = (price - ema) * multiplier + ema;
+  });
+  return ema;
+}
+
 function computeRsi(prices, period = 14) {
   if (prices.length <= period) return 50;
 
@@ -143,7 +153,7 @@ async function fetchGoldData() {
       throw new Error('Binance returned no usable PAXGUSDT price data');
     }
 
-    const ma20 = average(closes.slice(-20));
+    const ma20 = computeEma(closes.slice(-20), 20);
     const ma50 = average(closes.slice(-50));
     const rsi = computeRsi(closes, 14);
     const averageVolume = average(volumes.slice(-50));
@@ -161,6 +171,15 @@ async function fetchGoldData() {
       marketType: source.marketType
     };
   }, 8000);
+}
+
+let marketCache = { payload: null, expiresAt: 0 };
+
+async function fetchGoldDataCached() {
+  if (marketCache.payload && marketCache.expiresAt > Date.now()) return marketCache.payload;
+  const payload = await fetchGoldData();
+  marketCache = { payload, expiresAt: Date.now() + 20000 };
+  return payload;
 }
 
 async function fetchNewsSentiment() {
@@ -199,7 +218,7 @@ function buildFallbackSignalPayload() {
   return {
     symbol: 'PAXGUSDT', price: null, change: null, signal: 'UNAVAILABLE', successRate: null, confidence: null,
     trend: 'Unavailable', rsi: null, ma20: null, ma50: null, sentiment: 0, sentimentLabel: 'Unavailable',
-    newsHeadlines: [], entry: null, stop: null, target: null, dataSource: 'Binance USDⓈ-M unavailable',
+    newsHeadlines: [], entry: null, stop: null, target: null, dataSource: 'No live exchange feed', dataQuality: 'No trade data', updatedAt: null,
     marketSummary: {
       priceAction: 'Unavailable', riskBias: 'No trade', analysis: 'Binance market data is unavailable. Do not open a futures position until a fresh PAXGUSDT price is received.',
       traderExperience: 'Experienced traders do not trade blind or rely on stale prices. Wait for live exchange data and confirm leverage, margin, and liquidation distance.',
@@ -210,7 +229,7 @@ function buildFallbackSignalPayload() {
 
 async function buildSignalPayload() {
   try {
-    const market = await fetchGoldData();
+    const market = await fetchGoldDataCached();
     const news = await fetchNewsSentiment().catch(() => ({ sentiment: 0, headlines: [] }));
 
     const volumeScore = market.volumeScore;
@@ -223,12 +242,13 @@ async function buildSignalPayload() {
       volumeScore
     });
 
-    const confidence = signal.confidence;
-    const direction = signal.label;
+    const hasFuturesHistory = market.marketType === 'Futures';
+    const confidence = hasFuturesHistory ? signal.confidence : 0;
+    const direction = hasFuturesHistory ? signal.label : 'WATCH';
     const successRate = direction === 'BUY' ? 82 : direction === 'SELL' ? 79 : 68;
-    const entry = direction === 'BUY' ? market.price * 0.995 : market.price * 1.005;
-    const stop = direction === 'BUY' ? market.price * 0.985 : market.price * 1.015;
-    const target = direction === 'BUY' ? market.price * 1.015 : market.price * 0.985;
+    const entry = hasFuturesHistory ? (direction === 'BUY' ? market.price * 0.995 : market.price * 1.005) : null;
+    const stop = hasFuturesHistory ? (direction === 'BUY' ? market.price * 0.985 : market.price * 1.015) : null;
+    const target = hasFuturesHistory ? (direction === 'BUY' ? market.price * 1.015 : market.price * 0.985) : null;
 
     return {
       symbol: 'PAXGUSDT',
@@ -275,7 +295,8 @@ async function buildSignalPayload() {
         support: Number((market.price - Math.max(8, market.price * 0.006)).toFixed(2)),
         resistance: Number((market.price + Math.max(8, market.price * 0.008)).toFixed(2))
       }
-      , dataSource: `Binance public API (${market.marketType})`, marketType: market.marketType
+      , dataSource: `Binance public API (${market.marketType})`, marketType: market.marketType, updatedAt: Date.now(),
+      dataQuality: hasFuturesHistory ? 'Live futures candles' : 'Live spot proxy; futures signal disabled'
     };
   } catch (error) {
     return buildFallbackSignalPayload();
@@ -339,4 +360,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { buildSignalPayload, getSignalFromMetrics, computeRsi, fetchGoldData };
+module.exports = { buildSignalPayload, getSignalFromMetrics, computeRsi, computeEma, fetchGoldData };
