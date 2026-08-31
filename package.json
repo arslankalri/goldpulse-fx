@@ -1,0 +1,13 @@
+{
+  "name": "gold-signal-app",
+  "version": "1.0.0",
+  "description": "Gold-only forex trading signal dashboard",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

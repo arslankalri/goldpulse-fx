@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GoldPulse | PAXGUSDT Futures</title>
+    <meta name="description" content="Binance PAXGUSDT futures market analysis, sentiment, indicators, and risk-aware signals." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="container nav">
+        <div class="brand">
+          <span class="brand-mark">G</span>
+          <span>GoldPulse FX</span>
+        </div>
+        <nav class="nav-links">
+          <a href="#overview">Overview</a>
+          <a href="#signal-engine">Signal Engine</a>
+          <a href="#news">Sentiment</a>
+        </nav>
+        <button class="button button-small" type="button" id="refreshButton">Refresh</button>
+      </div>
+    </header>
+
+    <main>
+      <section id="overview" class="hero">
+        <div class="container hero-grid">
+          <div class="hero-copy">
+            <p class="eyebrow">Binance futures trading intelligence</p>
+            <h1>PAXGUSDT signal dashboard</h1>
+            <p class="lead">
+              Live Binance gold-token setup using trend structure, momentum, news sentiment, and risk-aware futures analysis.
+            </p>
+            <div class="hero-actions">
+              <button class="button" type="button" id="refreshButtonMain">Refresh Signal</button>
+              <button class="button button-secondary" type="button">Risk Rules</button>
+            </div>
+            <ul class="trust-list">
+              <li>Trend confirmation</li>
+              <li>AI sentiment scan</li>
+              <li>Trader experience model</li>
+            </ul>
+          </div>
+
+          <div class="signal-panel">
+            <div class="signal-header">
+              <div>
+                <p class="mini-label">Binance USDⓈ-M Futures</p>
+                <h2>PAXGUSDT</h2>
+              </div>
+              <span class="signal-badge" id="signalBadge">UNAVAILABLE</span>
+            </div>
+
+            <div class="price-row">
+              <div>
+                <span class="price-label">Last price</span>
+                <h3 id="priceValue">--</h3>
+              </div>
+              <div class="price-change positive" id="priceChange">--</div>
+            </div>
+
+            <div class="stats-grid">
+              <div class="mini-stat">
+                <span>Model Score</span>
+                <strong id="successRateValue">--</strong>
+              </div>
+              <div class="mini-stat">
+                <span>Confidence</span>
+                <strong id="confidenceValue">--</strong>
+              </div>
+              <div class="mini-stat">
+                <span>Trend</span>
+                <strong id="trendValue">--</strong>
+              </div>
+              <div class="mini-stat">
+                <span>Sentiment</span>
+                <strong id="sentimentValue">--</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="signal-engine" class="section section-alt">
+        <div class="container">
+          <div class="section-heading">
+            <p class="eyebrow">Signal engine</p>
+            <h2>Gold decision model</h2>
+          </div>
+
+          <div class="card-grid">
+            <article class="info-card">
+              <div class="card-topline">
+                <span class="chip chip-green">Trend</span>
+                <strong id="trendScore">--</strong>
+              </div>
+              <h3>Market analysis</h3>
+              <p id="marketAnalysis">Waiting for Binance price structure...</p>
+            </article>
+
+            <article class="info-card">
+              <div class="card-topline">
+                <span class="chip chip-gold">Indicators</span>
+                <strong id="indicatorScore">--</strong>
+              </div>
+              <h3>Technical setup</h3>
+              <p id="indicatorText">Loading Binance candle validation...</p>
+            </article>
+
+            <article class="info-card">
+              <div class="card-topline">
+                <span class="chip chip-blue">AI / Sentiment</span>
+                <strong id="sentimentScore">--</strong>
+              </div>
+              <h3>AI sentiment</h3>
+              <p id="sentimentText">Scanning gold news and macro drivers...</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section id="news" class="section">
+        <div class="container dashboard-grid">
+          <div class="panel">
+            <div class="section-heading small-gap">
+              <p class="eyebrow">Market pulse</p>
+              <h3>Indicator summary</h3>
+            </div>
+
+            <div class="metric-row">
+              <span>20 EMA</span>
+              <strong id="emaValue">--</strong>
+              <span class="positive">Trend</span>
+            </div>
+            <div class="metric-row">
+              <span>50 SMA</span>
+              <strong id="smaValue">--</strong>
+              <span class="positive">Trend</span>
+            </div>
+            <div class="metric-row">
+              <span>RSI</span>
+              <strong id="rsiValue">--</strong>
+              <span class="neutral">Momentum</span>
+            </div>
+            <div class="metric-row">
+              <span>ATR</span>
+              <strong id="atrValue">--</strong>
+              <span class="neutral">Volatility</span>
+            </div>
+            <div class="divider"></div>
+            <div class="section-heading small-gap">
+              <p class="eyebrow">Futures setup</p>
+              <h3>Risk levels</h3>
+            </div>
+            <div class="metric-row">
+              <span>Entry reference</span>
+              <strong id="entryValue">--</strong>
+            </div>
+            <div class="metric-row">
+              <span>Stop reference</span>
+              <strong id="stopValue">--</strong>
+            </div>
+            <div class="metric-row">
+              <span>Target reference</span>
+              <strong id="targetValue">--</strong>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="section-heading small-gap">
+              <p class="eyebrow">Trader experience</p>
+              <h3>Execution context</h3>
+            </div>
+            <div class="experience-card">
+              <p id="traderExperience">Loading trader-view execution commentary...</p>
+            </div>
+            <div class="divider"></div>
+            <div class="section-heading small-gap top-space">
+              <p class="eyebrow">News filter</p>
+              <h3>Recent gold sentiment drivers</h3>
+            </div>
+            <ul class="news-list" id="newsList">
+              <li>Fetching gold headlines...</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="container footer-row">
+        <div>
+          <p class="eyebrow">Signal status</p>
+          <h3 id="summaryText">Connecting to Binance market data...</h3>
+        </div>
+        <p class="risk-note">Model output is informational. Futures trading involves leverage and liquidation risk.</p>
+      </div>
+    </footer>
+
+    <script src="app.js"></script>
+  </body>
+</html>
