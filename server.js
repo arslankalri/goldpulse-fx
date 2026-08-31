@@ -325,14 +325,13 @@ async function buildSignalPayload() {
     return {
       symbol: 'PAXGUSDT',
       price: market.price,
-    timeframe: '1h',
       signal: direction,
       successRate,
       confidence,
       trend: market.price > market.ma20 ? 'Bullish' : market.price < market.ma20 ? 'Bearish' : 'Neutral',
       rsi: roundOrNull(market.rsi, 1),
       ma20: roundOrNull(market.ma20),
-    assumptions: `${riskPercent}% risk, ${leverage}x max leverage, ${horizon} hourly candles, fees and slippage included; spot proxy, not exchange futures`
+      ma50: roundOrNull(market.ma50),
       sentiment: Number(news.sentiment.toFixed(2)),
       sentimentLabel: news.sentiment >= 0.2 ? 'Bullish' : news.sentiment <= -0.2 ? 'Bearish' : 'Neutral',
       newsHeadlines: news.headlines,
