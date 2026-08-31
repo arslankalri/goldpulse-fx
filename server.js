@@ -173,21 +173,24 @@ async function fetchGoldData() {
   return withTimeout(async (signal) => {
     const symbol = 'PAXGUSDT';
     const headers = { 'Accept': 'application/json' };
-    const [historyResponse, quoteResponse] = await Promise.all([
-      fetch('https://api.coingecko.com/api/v3/coins/pax-gold/market_chart?vs_currency=usd&days=30&interval=hourly', { signal, headers }),
-      fetch('https://api.coingecko.com/api/v3/simple/price?ids=pax-gold&vs_currencies=usd&include_24hr_change=true', { signal, headers })
-    ]);
-    if (!historyResponse.ok || !quoteResponse.ok) throw new Error('CoinGecko PAXG feed unavailable');
-
-    const history = await historyResponse.json();
+    const quoteResponse = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=pax-gold&vs_currencies=usd&include_24hr_change=true', { signal, headers });
+    if (!quoteResponse.ok) throw new Error('CoinGecko PAXG quote unavailable');
     const quote = await quoteResponse.json();
-    const closes = history.prices.map((point) => Number(point[1])).filter(Number.isFinite);
-    const volumes = history.total_volumes.map((point) => Number(point[1])).filter(Number.isFinite);
     const ticker = quote?.['pax-gold'];
     const price = Number(ticker.price);
-    if (!closes.length || !Number.isFinite(price)) {
+    if (!Number.isFinite(price)) {
       throw new Error('CoinGecko returned no usable PAXG price data');
     }
+
+    const historyResponse = await fetch('https://api.coingecko.com/api/v3/coins/pax-gold/market_chart?vs_currency=usd&days=30&interval=hourly', { signal, headers });
+    if (!historyResponse.ok) {
+      return { symbol, price, ma20: price, ma50: price, rsi: null, closes: [price], volumeScore: null, change: Number(ticker.usd_24h_change || 0), marketType: 'PAXG spot price only', timeframe: 'live' };
+    }
+
+    const history = await historyResponse.json();
+    const closes = history.prices.map((point) => Number(point[1])).filter(Number.isFinite);
+    const volumes = history.total_volumes.map((point) => Number(point[1])).filter(Number.isFinite);
+    if (!closes.length) throw new Error('CoinGecko returned no historical PAXG data');
 
     const ma20 = computeEma(closes.slice(-20), 20);
     const ma50 = average(closes.slice(-50));
@@ -304,7 +307,7 @@ async function buildSignalPayload() {
     const news = await fetchNewsSentiment().catch(() => ({ sentiment: 0, headlines: [] }));
     const backtest = await getBacktestResult();
 
-    const volumeScore = market.volumeScore;
+    const volumeScore = market.volumeScore ?? 0.5;
     const signal = getSignalFromMetrics({
       price: market.price,
       ma20: market.ma20,
@@ -314,7 +317,7 @@ async function buildSignalPayload() {
       volumeScore
     });
 
-    const hasFuturesHistory = market.marketType === 'Futures';
+    const hasFuturesHistory = false;
     const confidence = hasFuturesHistory ? signal.confidence : 0;
     const direction = hasFuturesHistory ? signal.label : 'WATCH';
     const successRate = backtest?.trades >= 20 ? backtest.successRate : null;
@@ -360,14 +363,14 @@ async function buildSignalPayload() {
       indicators: {
         ema20: roundOrNull(market.ma20),
         sma50: roundOrNull(market.ma50),
-        atr: Number((Math.abs(market.price - market.ma20) * 1.2 + 10).toFixed(2)),
-        macd: market.rsi >= 60 ? 'Bullish crossover' : market.rsi <= 40 ? 'Bearish crossover' : 'Neutral range',
-        volume: volumeScore > 0.55 ? 'Above average' : volumeScore < 0.45 ? 'Below average' : 'Balanced',
+        atr: market.rsi === null ? null : Number((Math.abs(market.price - market.ma20) * 1.2 + 10).toFixed(2)),
+        macd: market.rsi === null ? 'Unavailable' : market.rsi >= 60 ? 'Bullish crossover' : market.rsi <= 40 ? 'Bearish crossover' : 'Neutral range',
+        volume: market.volumeScore === null ? 'Unavailable' : volumeScore > 0.55 ? 'Above average' : volumeScore < 0.45 ? 'Below average' : 'Balanced',
         support: roundOrNull(market.price - Math.max(8, market.price * 0.006)),
         resistance: roundOrNull(market.price + Math.max(8, market.price * 0.008))
       }
       , dataSource: `CoinGecko public API (${market.marketType})`, marketType: market.marketType, updatedAt: Date.now(),
-      dataQuality: 'Live PAXG spot data; futures signal disabled'
+      dataQuality: market.marketType === 'PAXG spot price only' ? 'Live PAXG price; history rate-limited' : 'Live PAXG spot data; futures signal disabled'
       , backtest
     };
   } catch (error) {

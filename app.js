@@ -51,7 +51,7 @@ function renderSignal(data) {
   document.getElementById('targetValue').textContent = formatMoney(data.target);
   document.getElementById('backtestTrades').textContent = data.backtest?.trades ?? '--';
   document.getElementById('backtestReturn').textContent = Number.isFinite(data.backtest?.netReturn) ? `${data.backtest.netReturn > 0 ? '+' : ''}${data.backtest.netReturn.toFixed(2)}%` : '--';
-  document.getElementById('backtestAssumptions').textContent = data.backtest?.assumptions || 'Backtest unavailable until 15-minute futures history is available.';
+  document.getElementById('backtestAssumptions').textContent = data.backtest?.assumptions || 'Backtest unavailable until CoinGecko historical PAXG data is available.';
   document.getElementById('traderExperience').textContent = data.marketSummary?.traderExperience || 'Experienced traders are waiting for clean pullbacks and disciplined stops before committing to new gold positions.';
 
   const list = document.getElementById('newsList');
