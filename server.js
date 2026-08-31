@@ -10,6 +10,10 @@ function average(values) {
   return values.reduce((sum, value) => sum + value, 0) / values.length;
 }
 
+function roundOrNull(value, decimals = 2) {
+  return Number.isFinite(value) ? Number(value.toFixed(decimals)) : null;
+}
+
 function computeEma(prices, period) {
   if (!prices.length) return 0;
   const multiplier = 2 / (period + 1);
@@ -257,16 +261,16 @@ async function buildSignalPayload() {
       signal: direction,
       successRate,
       confidence,
-      trend: market.price > market.ma20 ? 'Bullish' : 'Bearish',
-      rsi: Number(market.rsi.toFixed(1)),
-      ma20: Number(market.ma20.toFixed(2)),
-      ma50: Number(market.ma50.toFixed(2)),
+      trend: market.price > market.ma20 ? 'Bullish' : market.price < market.ma20 ? 'Bearish' : 'Neutral',
+      rsi: roundOrNull(market.rsi, 1),
+      ma20: roundOrNull(market.ma20),
+      ma50: roundOrNull(market.ma50),
       sentiment: Number(news.sentiment.toFixed(2)),
       sentimentLabel: news.sentiment >= 0.2 ? 'Bullish' : news.sentiment <= -0.2 ? 'Bearish' : 'Neutral',
       newsHeadlines: news.headlines,
-      entry: Number(entry.toFixed(2)),
-      stop: Number(stop.toFixed(2)),
-      target: Number(target.toFixed(2)),
+      entry: roundOrNull(entry),
+      stop: roundOrNull(stop),
+      target: roundOrNull(target),
       marketSummary: {
         priceAction: market.price > market.ma20 ? 'Above trend' : 'Below trend',
         riskBias: direction === 'BUY' ? 'Bullish bias' : direction === 'SELL' ? 'Bearish bias' : 'Neutral bias',
@@ -287,13 +291,13 @@ async function buildSignalPayload() {
             : 'AI sentiment is neutral because macro headlines and price action are conflicting, indicating a watch-only phase.'
       },
       indicators: {
-        ema20: Number(market.ma20.toFixed(2)),
-        sma50: Number(market.ma50.toFixed(2)),
+        ema20: roundOrNull(market.ma20),
+        sma50: roundOrNull(market.ma50),
         atr: Number((Math.abs(market.price - market.ma20) * 1.2 + 10).toFixed(2)),
         macd: market.rsi >= 60 ? 'Bullish crossover' : market.rsi <= 40 ? 'Bearish crossover' : 'Neutral range',
         volume: volumeScore > 0.55 ? 'Above average' : volumeScore < 0.45 ? 'Below average' : 'Balanced',
-        support: Number((market.price - Math.max(8, market.price * 0.006)).toFixed(2)),
-        resistance: Number((market.price + Math.max(8, market.price * 0.008)).toFixed(2))
+        support: roundOrNull(market.price - Math.max(8, market.price * 0.006)),
+        resistance: roundOrNull(market.price + Math.max(8, market.price * 0.008))
       }
       , dataSource: `Binance public API (${market.marketType})`, marketType: market.marketType, updatedAt: Date.now(),
       dataQuality: hasFuturesHistory ? 'Live futures candles' : 'Live spot proxy; futures signal disabled'
