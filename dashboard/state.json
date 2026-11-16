@@ -1,0 +1,49 @@
+{
+ "app": "gold-app",
+ "version": "0.1.0",
+ "symbol": "PAXGUSDT",
+ "generated_at": "2026-11-16T07:21:28.641965+00:00",
+ "market": {
+  "mark": 3843.06801441,
+  "index": 3843.93879022,
+  "funding": 4.232e-05
+ },
+ "regime": {
+  "bias": "bearish",
+  "price": 3842.79,
+  "daily_ema20": 3966.666567554129,
+  "daily_ema50": 4057.6348586818876,
+  "h4_ema50": 3923.5523905157884,
+  "macro": {
+   "dxy": "unknown",
+   "real_yield": "unknown",
+   "us10y": "unknown"
+  },
+  "notes": []
+ },
+ "latest_scan": {
+  "at": "2026-11-16T07:21:28.641965+00:00",
+  "signal": null,
+  "log": [
+   "session: outside session window (17:00-01:30 JST)"
+  ]
+ },
+ "open_signals": [],
+ "scoreboard": {
+  "issued": 0,
+  "filled": 0,
+  "pending": 0,
+  "open": 0,
+  "tp1": 0,
+  "tp2": 0,
+  "tp3": 0,
+  "sl": 0,
+  "breakeven": 0,
+  "expired": 0,
+  "timeouts": 0,
+  "resolved": 0,
+  "wins": 0,
+  "losses": 0,
+  "era": "0.1.0"
+ }
+}

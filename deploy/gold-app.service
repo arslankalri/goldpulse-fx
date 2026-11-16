@@ -1,0 +1,23 @@
+[Unit]
+Description=Gold App — PAXG signal engine + web dashboard (decision-support only)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/opt/gold-app
+Environment=TZ=Asia/Tokyo
+Environment=GOLDAPP_DATA_DIR=/opt/gold-app/data
+Environment=GOLDAPP_PORT=8791
+ExecStart=/opt/gold-app/run.sh
+Restart=always
+RestartSec=5
+KillSignal=SIGTERM
+TimeoutStopSec=30
+NoNewPrivileges=true
+PrivateTmp=true
+LimitNOFILE=8192
+
+[Install]
+WantedBy=multi-user.target
